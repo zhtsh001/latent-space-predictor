@@ -2,34 +2,91 @@
 
 **Inspired by Prof. Kim's lectures on video processing and Yann LeCun's JEPA philosophy.**
 
-A minimal, self-contained demo for learning robot-video dynamics in latent space.
+A compact research-style demo for action-conditioned video prediction in latent space.
 
-This project builds a tiny push-style video dataset, encodes each frame into a semantic embedding, and trains a small predictor to map:
+## Project Motivation
 
-`current latent + action -> next latent`
+A core idea in modern video representation learning is that a model does not always need to generate every pixel of the next frame in order to understand dynamics. If a compact latent captures the right semantics, then predicting future states in latent space can be both faster and more meaningful.
 
-The point is simple:
+This project explores that idea in a minimal robot-pushing setting:
 
-- predicting the next latent is much cheaper than directly generating the next image
-- a compact latent can still preserve motion semantics such as object displacement trend
+- encode each frame into a semantic latent
+- condition on the current action
+- predict the next latent instead of directly generating the next image
 
-## What is in this repo?
+The result is a small but concrete prototype that demonstrates predictive world-model thinking in a form simple enough to inspect end-to-end.
 
-- A synthetic push-style robot video dataset generator
-- A simple image encoder based on colored-object centroids
-- A tiny MLP latent predictor
-- A pixel-space baseline for speed comparison
-- An evaluation script that exports metrics and visualization frames
+## What This Demo Shows
 
-## Why this is a good lab-application demo
+- A tiny latent transition model can be dramatically cheaper than direct pixel prediction.
+- A compact latent can still preserve motion-relevant structure, especially the manipulated object's movement trend.
+- Even a minimal project can communicate research taste: representation learning, action-conditioned dynamics, and JEPA-style abstraction.
 
-This repo is intentionally small enough to understand in one sitting, but it still demonstrates a research-style idea:
+## Key Result
 
-1. learn a compact state representation from video
-2. predict dynamics in embedding space instead of image space
-3. show that the learned transition model is faster and still semantically meaningful
+Running the default script on the current machine produced:
 
-## Repository structure
+| Metric | Result |
+|---|---:|
+| Latent predictor loss | `0.0025` |
+| Object-motion trend accuracy | `0.920` |
+| Latent predictor parameters | `415` |
+| Pixel baseline parameters | `28,176` |
+| Measured inference speedup | `~59x` |
+
+Interpretation:
+
+- the latent model is much smaller and faster than the pixel baseline
+- the predicted latent still tracks the object's movement direction well enough to remain semantically meaningful
+
+## Method Overview
+
+### 1. Synthetic Push-Style Video Dataset
+
+Each frame contains:
+
+- a red robot end-effector
+- a blue object
+- an action `(dx, dy)`
+
+When the end-effector reaches the object, the object is pushed. This creates a simple robot-video dynamics task with interpretable motion.
+
+### 2. Simple Semantic Encoder
+
+For transparency, the encoder is intentionally lightweight. It detects the centroids of the robot and object and builds a latent vector:
+
+`[robot_x, robot_y, object_x, object_y, rel_x, rel_y, distance]`
+
+This makes the representation easy to understand and easy to evaluate.
+
+### 3. Latent Dynamics Predictor
+
+A tiny MLP learns:
+
+`[z_t, action_t] -> z_(t+1)`
+
+The goal is not photorealism. The goal is to model motion-relevant structure efficiently.
+
+### 4. Pixel-Space Baseline
+
+A naive baseline learns:
+
+`[image_t, action_t] -> image_(t+1)`
+
+This gives a direct comparison for parameter count and inference cost, highlighting why latent prediction is attractive.
+
+## Why This Is a Strong Lab-Application Project
+
+This repository is intentionally small, but it still demonstrates several qualities that matter in research:
+
+- translating a high-level idea into a runnable prototype
+- designing a controlled experiment instead of only describing intuition
+- comparing against a baseline rather than making a claim without evidence
+- communicating both results and limitations clearly
+
+In other words, it is not just “a coding project.” It is a small experimental argument.
+
+## Repository Structure
 
 ```text
 latent-space-predictor/
@@ -47,106 +104,38 @@ latent-space-predictor/
 
 ## Quickstart
 
-This demo is written in pure Python standard library, so it has no external runtime dependency.
+This project uses only the Python standard library.
 
 ```bash
 cd latent-space-predictor
 python3 scripts/run_demo.py
 ```
 
-Outputs will be written to:
+Artifacts are written to:
 
 - `outputs/report.txt`
 - `outputs/metrics.json`
 - `outputs/rollout_comparison.ppm`
 
-## Method
+## Portfolio Framing
 
-### 1. Synthetic push-style dataset
+If I were presenting this project as part of a lab application, I would frame it like this:
 
-Each frame contains:
+> I built this demo to explore a simple version of action-conditioned predictive modeling for video. Instead of generating the next frame directly, I encode the scene into a compact semantic latent and learn the transition in latent space. Even in a toy pushing environment, the model is much faster than pixel-space prediction while still preserving object-motion trends.
 
-- a red robot end-effector
-- a blue object
-- an action `(dx, dy)`
+## Limitations and Next Steps
 
-When the end-effector reaches the object, the object gets pushed. This gives us a tiny but meaningful robot-video dynamics problem.
+- The encoder is hand-crafted rather than learned.
+- The dataset is synthetic rather than a real robot dataset such as PushT or BAIR.
+- The current model is designed for clarity, not maximum accuracy.
 
-### 2. Encoder
+Natural next steps would be:
 
-For clarity, the encoder is deliberately simple:
+- replace the encoder with a learned CNN
+- train the latent model end-to-end in PyTorch
+- evaluate on a real robot-video dataset
+- compare against stronger baselines beyond a tiny pixel MLP
 
-- detect the centroid of the red robot
-- detect the centroid of the blue object
-- build a latent vector from their positions and relative geometry
+## Suggested GitHub Description
 
-The latent is:
-
-`[robot_x, robot_y, object_x, object_y, rel_x, rel_y, distance]`
-
-### 3. Predictor
-
-A small MLP learns:
-
-`[z_t, action_t] -> z_(t+1)`
-
-### 4. Baseline
-
-A naive pixel-space predictor tries to map:
-
-`[image_t, action_t] -> image_(t+1)`
-
-This is not meant to be state of the art. It is included to make one clean argument:
-
-predicting a small semantic state is cheaper than predicting all pixels.
-
-## Main claim
-
-After running `python3 scripts/run_demo.py`, the script reports:
-
-- latent prediction loss
-- object-motion trend accuracy
-- parameter count of the latent predictor vs the pixel baseline
-- measured forward-pass speed ratio
-
-## Example result from a local run
-
-On the current machine, the default script produced:
-
-- latent predictor loss: `0.0025`
-- object-motion trend accuracy: `0.920`
-- latent predictor parameters: `415`
-- pixel baseline parameters: `28,176`
-- measured inference speedup: `~59x`
-
-So even in this tiny toy setting, the latent transition model is both:
-
-- much cheaper than direct pixel prediction
-- good enough to preserve the direction of object movement
-
-## Expected takeaway
-
-Even in this toy setup, the latent predictor should:
-
-- run much faster than direct pixel prediction
-- preserve the direction of object movement well enough to be semantically meaningful
-
-That makes it a good “small but research-flavored” portfolio piece for a lab application.
-
-## Notes
-
-- The current encoder is hand-crafted for transparency.
-- A natural next step would be replacing it with a learned CNN encoder and training end-to-end in PyTorch.
-- The dataset is synthetic so the whole demo stays reproducible and dependency-free.
-
-## Suggested GitHub pitch
-
-If you send this repo to a professor, you can describe it like this:
-
-> A minimal JEPA-style dynamics demo: instead of generating the next frame directly, I encode each frame into a compact semantic latent and learn a transition model in latent space conditioned on action. Even in a toy robot-pushing setting, the latent predictor is substantially faster than pixel-space prediction while preserving the motion trend of the manipulated object.
-
-## Suggested application note
-
-If you want, you can pair this repo with a short message like:
-
-> I built this small project to show that I can turn ideas from video representation learning into a concrete, testable prototype. The project is intentionally minimal, but it reflects my interest in predictive world models, compact representations, and action-conditioned video dynamics.
+`A minimal JEPA-style latent dynamics demo for robot video prediction.`
