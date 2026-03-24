@@ -1,0 +1,10 @@
+{
+  "latent_final_loss": 0.002488294375798713,
+  "pixel_final_loss": 0.2028081459559103,
+  "trend_accuracy": 0.9201388888888888,
+  "latent_parameters": 415.0,
+  "pixel_parameters": 28176.0,
+  "latent_forward_sec": 2.270569416666627e-05,
+  "pixel_forward_sec": 0.001360325556666666,
+  "speedup_x": 59.911207588787576
+}

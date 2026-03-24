@@ -1,0 +1,14 @@
+Latent Space Predictor Report
+
+Final latent training loss: 0.002488
+Final pixel baseline loss: 0.202808
+Object motion trend accuracy: 0.920
+Latent predictor parameters: 415
+Pixel baseline parameters: 28176
+Average latent forward pass (sec): 0.00002271
+Average pixel forward pass (sec): 0.00136033
+Measured speedup: 59.91x
+
+Loss history snapshot:
+- latent start/end: 0.024510 -> 0.002511
+- pixel start/end: 0.728303 -> 0.255074
